@@ -1,0 +1,44 @@
+# This workflow runs every time you push to the main branch.
+# It builds the React app and deploys it to Azure App Service.
+
+name: Deploy Frontend to Azure
+
+# TRIGGER: When does this run?
+on:
+  push:
+    branches: [main]  # Only on pushes to main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest  # GitHub provides a free Linux VM
+
+    steps:
+      # Step 1: Download your code into the VM
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Install Node.js 22
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'  # Caches node_modules for faster builds
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm ci  # ci is faster than install — uses lockfile exactly
+
+      # Step 4: Build the production bundle
+      # VITE_API_URL is set so the frontend knows where the backend is
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: https://saas-todo-backend.azurewebsites.net
+
+      # Step 5: Deploy the dist/ folder to Azure App Service
+      - name: Deploy to Azure
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: saas-todo-frontend
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: dist
