@@ -29,16 +29,20 @@ jobs:
         run: npm ci  # ci is faster than install — uses lockfile exactly
 
       # Step 4: Build the production bundle
-      # VITE_API_URL is set so the frontend knows where the backend is
       - name: Build
         run: npm run build
         env:
           VITE_API_URL: https://saas-todo-backend.azurewebsites.net
 
-      # Step 5: Deploy the dist/ folder to Azure App Service
+      # Step 5: Login to Azure using Service Principal credentials
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Step 6: Deploy the dist/ folder to Azure App Service
       - name: Deploy to Azure
         uses: azure/webapps-deploy@v2
         with:
           app-name: saas-todo-frontend
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: dist
